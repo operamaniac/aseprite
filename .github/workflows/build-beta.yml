@@ -15,6 +15,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
+        repository: aseprite/aseprite  # Checkout from original repo to ensure tags are available
         ref: v1.3.16-beta1  # Beta release with workspace customization - update when needed
         submodules: 'recursive'
     - name: Install Dependencies
