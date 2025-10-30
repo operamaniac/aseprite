@@ -1,10 +1,6 @@
-name: build
+name: Build Stable (Manual)
 on: 
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:
+  workflow_dispatch:  # Manual trigger only
 
 jobs:
   build:
@@ -19,6 +15,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
+        ref: v1.3.15.3  # Latest stable release - update when new versions come out
         submodules: 'recursive'
     - name: Install Dependencies
       if: runner.os == 'Linux'
@@ -90,10 +87,29 @@ jobs:
       shell: bash
       run: |
         cd build && ninja aseprite
+    - name: Copy Required DLLs (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        # Copy OpenSSL DLLs if they exist in the system
+        $possiblePaths = @(
+          "C:\Program Files\OpenSSL\bin",
+          "C:\Program Files\Git\mingw64\bin",
+          "C:\Windows\System32",
+          "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\bin"
+        )
+        foreach ($path in $possiblePaths) {
+          if (Test-Path "$path\libcrypto-3-x64.dll") {
+            Copy-Item "$path\libcrypto-3-x64.dll" "build\bin\"
+            Copy-Item "$path\libssl-3-x64.dll" "build\bin\" -ErrorAction SilentlyContinue
+            Write-Host "Found and copied DLLs from $path"
+            break
+          }
+        }
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: aseprite-${{ runner.os }}
+        name: aseprite-stable-${{ runner.os }}
         path: |
           build/bin/aseprite*
           build/bin/data/
